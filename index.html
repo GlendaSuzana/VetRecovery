@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10251f">
+  <title>VetRecovery | Monitoramento do Box</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">
+        <div class="logo">✚</div>
+        <div>
+          <h1>VetRecovery</h1>
+          <p class="subtitle">Monitoramento inteligente de box veterinário</p>
+        </div>
+      </div>
+      <div id="connection" class="connection"><span class="dot"></span><span id="connectionText">Conectando ao Firebase...</span></div>
+    </header>
+
+    <section class="intro">
+      <h2>Painel de monitoramento</h2>
+      <p>Box 01 · Dados recebidos diretamente do dispositivo ESP32</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <span class="metric-icon">🌡️</span>
+        <div class="metric-label">Temperatura</div>
+        <div class="metric-value" id="temperature">-- °C</div>
+        <div class="metric-note">Faixa configurada: 22 °C a 28 °C</div>
+      </article>
+      <article class="card">
+        <span class="metric-icon">💧</span>
+        <div class="metric-label">Umidade</div>
+        <div class="metric-value" id="humidity">-- %</div>
+        <div class="metric-note">Umidade relativa do ambiente</div>
+      </article>
+      <article class="card status-card">
+        <div>
+          <span class="metric-icon">🩺</span>
+          <div class="metric-label">Condição do ambiente</div>
+        </div>
+        <div><span id="environmentStatus" class="pill neutral">Aguardando dados</span></div>
+      </article>
+      <article class="card status-card">
+        <div>
+          <span class="metric-icon">🐾</span>
+          <div class="metric-label">Movimentação</div>
+        </div>
+        <div><span id="motionStatus" class="pill neutral">Aguardando dados</span></div>
+      </article>
+
+      <article class="card wide">
+        <h3 class="section-title">Variação das leituras nesta sessão</h3>
+        <div class="chart-wrap"><canvas id="readingsChart"></canvas></div>
+        <p class="metric-note">O gráfico começa a ser preenchido quando esta página recebe novas leituras. Ele não representa um histórico salvo no Firebase.</p>
+      </article>
+
+      <article class="card wide">
+        <h3 class="section-title">Estado dos dispositivos</h3>
+        <div class="details">
+          <div class="detail"><span>LED de alerta</span><strong id="ledStatus">--</strong></div>
+          <div class="detail"><span>Buzzer</span><strong id="buzzerStatus">--</strong></div>
+          <div class="detail"><span>Identificação</span><strong id="deviceId">--</strong></div>
+          <div class="detail"><span>Última atualização</span><strong id="lastUpdate">--</strong></div>
+        </div>
+        <div id="alertMessage" class="alert-box warn">Aguardando a primeira leitura do ESP32...</div>
+      </article>
+    </section>
+    <p class="footer">VetRecovery · Monitoramento IoT em tempo real</p>
+  </main>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
