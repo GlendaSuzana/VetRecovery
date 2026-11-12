@@ -1,6 +1,10 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
 
+// Importação das bibliotecas do Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+
+import { getDatabase } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
+
+// Configurações do projeto VetRecovery
 const firebaseConfig = {
   apiKey: "AIzaSyDw1lelsmttTSG9BcqhDo_2UmiakWxpuK4",
   authDomain: "vetrecovery-6f390.firebaseapp.com",
@@ -12,7 +16,8 @@ const firebaseConfig = {
   measurementId: "G-M3JP7DZRM3"
 };
 
+// Inicialização do Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
 
-export { database, ref, onValue };
+// Conexão com o Realtime Database
+export const database = getDatabase(app);
