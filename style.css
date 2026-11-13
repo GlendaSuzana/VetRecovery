@@ -351,3 +351,9 @@ h1 {
 #occurrenceNotes { resize: vertical; font-size: 16px; }
 @media (max-width: 850px) { .occurrence-filters { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .occurrence-heading { flex-wrap: wrap; } .occurrence-details th, .occurrence-details td { padding: 9px 8px; } #occurrenceDialog { padding: 18px; } }
+
+.page-navigation { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.navigation-button { display: inline-flex; justify-content: center; align-items: center; padding: 11px 16px; border: 1px solid var(--green); border-radius: 9px; background: var(--green); color: white; text-decoration: none; font-size: 13px; font-weight: 650; }
+.navigation-button.secondary { background: white; color: var(--green); }
+.navigation-button:focus-visible { outline: 3px solid #4787c7; outline-offset: 3px; }
+@media (max-width: 560px) { .page-navigation { align-items: flex-start; flex-direction: column; } }

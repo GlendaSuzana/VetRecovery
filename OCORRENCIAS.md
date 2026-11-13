@@ -2,7 +2,7 @@
 
 ## O que já funciona no dashboard
 
-A seção **Ocorrências**, abaixo das configurações, consulta `vetrecovery/box01/ocorrencias` em tempo real. Mostra 50 registros inicialmente e permite carregar mais 50 por vez. Os totais e filtros consideram somente os registros carregados, não todo o banco.
+A página **Ocorrências**, acessível pelo botão **Ver ocorrências** no painel principal, consulta `vetrecovery/box01/ocorrencias` em tempo real. Mostra 50 registros inicialmente e permite carregar mais 50 por vez. Os totais e filtros consideram somente os registros carregados, não todo o banco.
 
 - Filtros por tipo (temperatura, umidade, movimento), situação e data de início.
 - Lista do mais recente para o mais antigo, com início, duração observada/final e revisão da equipe.
@@ -82,7 +82,7 @@ Solicitar ao administrador:
 
 ## Como conferir
 
-1. Abra `index.html` pelo Live Server e desça até **Ocorrências**.
+1. Abra `index.html` pelo Live Server e clique em **Ver ocorrências**. A página também pode ser aberta diretamente em `ocorrencias.html`. Use **Voltar ao painel** para retornar.
 2. Sem registros no Firebase, verá a mensagem de lista vazia; com permissão negada, verá a mensagem correspondente.
 3. Após copiar os arquivos preparados para o Wokwi, cada episódio enviado com sucesso aparecerá automaticamente. O registro usa as regras do site; a sinalização local original continua usando os limites fixos do sketch enviado, conforme a preservação de escopo solicitada.
 4. Clique em **Ver detalhes**, registre uma observação, marque revisão e salve. O sucesso é mostrado somente quando o Firebase confirmar. Falhas mantêm o rascunho no formulário.

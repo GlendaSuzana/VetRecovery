@@ -34,9 +34,12 @@
       </div>
     </header>
 
-    <section class="intro">
-      <h2>Painel de monitoramento</h2>
-      <p>Box 01 · Dados recebidos diretamente do dispositivo ESP32</p>
+    <section class="intro page-navigation">
+      <div>
+        <h2>Painel de monitoramento</h2>
+        <p>Box 01 · Dados recebidos diretamente do dispositivo ESP32</p>
+      </div>
+      <a class="navigation-button" href="ocorrencias.html">Ver ocorrências</a>
     </section>
 
     <section class="grid">
@@ -160,46 +163,6 @@
       <p id="settingsMessage" class="settings-message" role="status" aria-live="polite">Carregando configurações...</p>
       <p id="deviceConfigStatus" class="metric-note" aria-live="polite">Aguardando confirmação do ESP32.</p>
     </section>
-
-    <section class="card occurrences" aria-labelledby="occurrencesTitle">
-      <div class="occurrence-heading">
-        <div><h2 id="occurrencesTitle">Ocorrências</h2><p class="settings-intro">Episódios registrados pelo dispositivo, com início, fim e regras aplicadas.</p></div>
-        <span class="pill neutral" id="occurrenceCount">Carregando...</span>
-      </div>
-      <p id="occurrenceSummary" class="metric-note">Consultando registros...</p>
-      <div class="occurrence-filters">
-        <label>Tipo<select id="occurrenceType"><option value="">Todos os tipos</option><option value="temperatura">Temperatura</option><option value="umidade">Umidade</option><option value="movimento">Movimento</option></select></label>
-        <label>Situação<select id="occurrenceState"><option value="">Todas as situações</option><option value="em_andamento">Em andamento</option><option value="encerrada">Encerrada</option><option value="interrompida">Interrompida</option></select></label>
-        <label>Início a partir de<input id="occurrenceFrom" type="date"></label>
-        <label>Início até<input id="occurrenceTo" type="date"></label>
-        <button id="clearOccurrenceFilters" class="secondary" type="button">Limpar filtros</button>
-      </div>
-      <p id="occurrenceMessage" role="status" aria-live="polite" class="settings-message">Carregando ocorrências...</p>
-      <div id="occurrenceList" class="occurrence-list"></div>
-      <button id="loadMoreOccurrences" type="button" class="secondary" hidden>Carregar mais antigas</button>
-      <p class="metric-note">Os filtros e os totais consideram os registros carregados. Datas no horário de Fortaleza. Revisar uma ocorrência não encerra o episódio do sensor.</p>
-    </section>
-
-    <dialog id="occurrenceDialog" aria-labelledby="occurrenceDialogTitle">
-      <div class="occurrence-heading"><h2 id="occurrenceDialogTitle">Detalhes da ocorrência</h2><button id="closeOccurrenceDialog" type="button" class="secondary">Fechar</button></div>
-      <table class="occurrence-details">
-        <caption>Informações do episódio registrado</caption>
-        <thead><tr><th scope="col">Informação</th><th scope="col">Detalhe</th></tr></thead>
-        <tbody id="occurrenceDetails"></tbody>
-      </table>
-      <p id="occurrenceCommunication" class="metric-note" aria-live="polite"></p>
-      <form id="occurrenceReviewForm">
-        <fieldset id="occurrenceReviewFields">
-          <legend>Acompanhamento da equipe</legend>
-          <label class="check"><input id="occurrenceReviewed" type="checkbox"> Ocorrência revisada pela equipe</label>
-          <label class="observation-label" for="occurrenceNotes">Observações</label>
-          <textarea id="occurrenceNotes" rows="4" maxlength="2000" placeholder="Registre observações sobre este episódio."></textarea>
-          <p class="metric-note">Até 2.000 caracteres. Início, fim, leituras e regras são informados pelo dispositivo.</p>
-          <button type="submit">Salvar acompanhamento</button>
-        </fieldset>
-      </form>
-      <p id="occurrenceReviewMessage" role="status" aria-live="polite" class="settings-message"></p>
-    </dialog>
 
     <p class="footer">
       VetRecovery · Monitoramento IoT em tempo real

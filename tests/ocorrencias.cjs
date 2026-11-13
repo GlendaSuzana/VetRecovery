@@ -51,6 +51,11 @@ export async function update(source,value){
   await page.route('https://www.gstatic.com/firebasejs/**',route=>route.fulfill({contentType:'text/javascript',body:route.request().url().includes('firebase-app')?'export const initializeApp=()=>({});':mock}));
   await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.Chart=class{constructor(el,c){this.data=c.data}update(){}}'}));
   await page.goto('http://127.0.0.1:'+server.address().port);
+  assert.equal(await page.locator('#occurrencesTitle').count(),0);
+  assert.equal(await page.evaluate(()=>window.listeners.some(x=>x.path.includes('/ocorrencias'))),false);
+  await page.getByRole('link',{name:'Ver ocorrências'}).click();
+  await page.waitForURL('**/ocorrencias.html');
+  assert.equal(await page.locator('#readingsChart').count(),0);
   await page.waitForFunction(()=>document.getElementById('occurrenceMessage').textContent.includes('Nenhuma ocorrência registrada'));
   assert.equal(await page.evaluate(()=>window.writes.length),0);
   await page.evaluate(()=>{
@@ -125,6 +130,10 @@ export async function update(source,value){
   await page.evaluate(()=>window.denyRead());
   assert.match(await page.locator('#occurrenceMessage').innerText(),/Não foi possível consultar/);
   assert.equal(await page.locator('.occurrence-item').count(),0);
+  await page.getByRole('link',{name:'Voltar ao painel'}).click();
+  await page.waitForURL('**/index.html');
+  await page.waitForFunction(()=>!document.getElementById('settingsFields').disabled);
+  assert.equal(await page.locator('#temperature').innerText(),'25.0 °C');
   assert.deepEqual(errors,[]);
   console.log('PASS: estado vazio, filtros, detalhes, duração, dados antigos, revisão e observações, escrita parcial, falha de escrita, preservação de rascunho, Escape, paginação, falha de leitura, XSS e layout mobile. Firebase simulado.');
   console.log('Capturas: '+screenshots);
