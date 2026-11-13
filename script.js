@@ -1,6 +1,7 @@
 
 // Importação da conexão com o Firebase
 import { database } from "./firebase.js";
+import { MotionSession } from "./movimento.js";
 
 import {
   ref,
@@ -115,6 +116,70 @@ const chart = new Chart($("readingsChart"), {
     }
   }
 });
+
+// O eixo é binário: não há valores intermediários entre repouso e movimento.
+const motionSession = new MotionSession();
+const motionChart = new Chart($("motionChart"), {
+  type: "line",
+  data: { datasets: [{ label: "Sensor PIR", data: [], stepped: true, spanGaps: false, clip: false,
+    borderColor: "#a66a12", backgroundColor: "#fff6e6", fill: true,
+    pointRadius: 6, pointHoverRadius: 8, pointHitRadius: 12,
+    pointBackgroundColor: "#a66a12", pointBorderColor: "#ffffff", pointBorderWidth: 2 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: {
+      title: items => items.length ? new Date(items[0].parsed.x).toLocaleTimeString("pt-BR") : "",
+      label: item => item.parsed.y === 1 ? "1 — Movimento detectado" : "0 — Sem movimento"
+    } } },
+    scales: {
+      x: { type: "linear", title: { display: true, text: "Horário de recebimento" },
+        ticks: { maxTicksLimit: 6, callback: value => new Date(value).toLocaleTimeString("pt-BR") } },
+      y: { min: 0, max: 1, ticks: { stepSize: 1, precision: 0 }, title: { display: true, text: "Movimento (0 ou 1)" } }
+    }
+  }
+});
+let lastMotionReceivedAt = null;
+function motionDuration(ms) {
+  const seconds = Math.floor(ms / 1000);
+  return seconds >= 60 ? `${Math.floor(seconds / 60)} min ${seconds % 60} s` : `${seconds} s`;
+}
+function renderMotionMetrics() {
+  $("motionEventCount").textContent = motionSession.events;
+  $("motionFrequency").textContent = motionSession.frequency === null ? "--" : `${motionSession.frequency.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} eventos/min`;
+  $("motionCurrentDuration").textContent = motionSession.previous === 1
+    ? motionDuration(motionSession.currentMs) + (motionSession.partial ? " (parcial)" : "") : "--";
+  $("motionLastDuration").textContent = motionSession.lastEvent
+    ? motionDuration(motionSession.lastEvent.durationMs) + (motionSession.lastEvent.partial ? " (parcial)" : "") : "--";
+}
+function addMotionPoint(data) {
+  const uptime = data?.tempo_execucao_ms;
+  const hasUptime = typeof uptime === "number" && Number.isFinite(uptime) && uptime >= 0;
+  const now = Date.now();
+  const result = motionSession.add(data?.movimento, hasUptime ? uptime : performance.now(), hasUptime ? "esp32" : "browser");
+  if (result.duplicate) return;
+  lastMotionReceivedAt = result.state === null ? null : performance.now();
+  const points = motionChart.data.datasets[0].data;
+  if (result.gap && points.length && points[points.length - 1].y !== null) points.push({ x: now - 1, y: null });
+  points.push({ x: now, y: result.state });
+  while (points.length > 60) points.shift();
+  motionChart.update();
+  $("motionChartMessage").textContent = result.state === null ? "Leitura de movimento indisponível. Nenhum repouso foi presumido."
+    : result.state === 1 ? "1 — Movimento detectado. A duração avança somente com novas leituras."
+    : "0 — Sem movimento detectado.";
+  renderMotionMetrics();
+}
+setInterval(() => {
+  if (lastMotionReceivedAt !== null && performance.now() - lastMotionReceivedAt > 15000) {
+    lastMotionReceivedAt = null;
+    motionSession.interrupt();
+    const points = motionChart.data.datasets[0].data;
+    points.push({ x: Date.now(), y: null });
+    while (points.length > 60) points.shift();
+    motionChart.update();
+    renderMotionMetrics();
+    $("motionChartMessage").textContent = "Sem novas leituras de movimento. A duração foi interrompida até receber novos dados.";
+  }
+}, 1000);
 
 // Atualização dos indicadores de status
 function setPill(id, text, type) {
@@ -332,6 +397,7 @@ onValue(configRef, snapshot => {
 const telemetryRef = ref(database, "vetrecovery/box01/telemetria");
 onValue(telemetryRef, snapshot => {
   latestData = snapshot.val();
+  addMotionPoint(latestData);
   telemetryError = false;
   connection.className = "connection online";
   connectionText.textContent = "Conectado ao Firebase";
@@ -345,6 +411,7 @@ onValue(telemetryRef, snapshot => {
   if (Number.isFinite(temp) && Number.isFinite(humidity) && temp >= -40 && temp <= 80 && humidity >= 0 && humidity <= 100) addChartPoint(temp, humidity);
 }, error => {
   telemetryError = true;
+  addMotionPoint(null);
   showError("Não foi possível ler a telemetria. Verifique a conexão e as regras de acesso do Firebase.");
   console.error("Erro ao ler Firebase:", error);
 });

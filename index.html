@@ -131,6 +131,21 @@
 
     </section>
 
+    <section class="card motion-panel" aria-labelledby="motionChartTitle">
+      <h2 id="motionChartTitle">Atividade do sensor de movimento</h2>
+      <p class="settings-intro">0 = sem movimento · 1 = movimento detectado. Leituras recebidas nesta sessão.</p>
+      <div class="chart-wrap"><canvas id="motionChart" role="img" aria-label="Gráfico de movimento: zero sem movimento e um com movimento"></canvas></div>
+      <p id="motionChartMessage" class="metric-note" role="status">Aguardando leituras do sensor PIR...</p>
+      <div class="motion-metrics">
+        <div><span>Inícios observados</span><strong id="motionEventCount">0</strong></div>
+        <div><span>Frequência média observada</span><strong id="motionFrequency">--</strong></div>
+        <div><span>Duração observada atual</span><strong id="motionCurrentDuration">--</strong></div>
+        <div><span>Último evento observado</span><strong id="motionLastDuration">--</strong></div>
+      </div>
+      <p class="metric-note">Gráfico: últimas 60 amostras. Contagem e durações estimadas desde a abertura da página, conforme o intervalo entre leituras; reiniciam ao recarregar ou voltar ao painel. Lacunas não são consideradas repouso. Um movimento já ativo ao abrir a página tem início desconhecido e não aumenta a contagem de inícios observados.</p>
+      <p class="metric-note">O registro persistente permanece em <a href="ocorrencias.html">Ocorrências</a>. No firmware atual, episódios de movimento são registrados quando a regra de alerta por movimento está ativada; este gráfico funciona independentemente dessa regra.</p>
+    </section>
+
     <section class="card settings" aria-labelledby="settingsTitle">
       <h2 id="settingsTitle">Limites e condições de alerta</h2>
       <p class="settings-intro">Defina as regras do Box 01. Um valor igual ao limite permanece dentro da faixa. Qualquer regra ativa atendida gera alerta.</p>

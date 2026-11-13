@@ -46,10 +46,23 @@ export async function set(ref, value) {
   const page=await browser.newPage({viewport:{width:1280,height:1000}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.route('https://www.gstatic.com/firebasejs/**', route=>route.fulfill({contentType:'text/javascript',body:route.request().url().includes('firebase-app')?'export const initializeApp=()=>({});':databaseMock}));
-  await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.Chart=class {constructor(el,c){this.data=c.data} update(){}}'}));
+  await page.route('https://cdn.jsdelivr.net/**',route=>route.fulfill({contentType:'text/javascript',body:'window.charts={};window.Chart=class {constructor(el,c){this.data=c.data;this.options=c.options;window.charts[el.id]=this} update(){}}'}));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.waitForFunction(()=>document.getElementById('settingsFields').disabled===false);
   assert.match(await page.locator('#environmentStatus').innerText(),/Dentro das regras/);
+  assert.equal(await page.evaluate(()=>window.charts.motionChart.options.scales.y.min),0);
+  assert.equal(await page.evaluate(()=>window.charts.motionChart.options.scales.y.max),1);
+  assert.equal(await page.evaluate(()=>window.charts.motionChart.data.datasets[0].stepped),true);
+  await page.evaluate(()=>{
+    window.emitTelemetry({...window.telemetry,movimento:0,tempo_execucao_ms:1000});
+    window.emitTelemetry({...window.telemetry,movimento:1,tempo_execucao_ms:3000});
+    window.emitTelemetry({...window.telemetry,movimento:1,tempo_execucao_ms:5000});
+    window.emitTelemetry({...window.telemetry,movimento:0,tempo_execucao_ms:7000});
+  });
+  assert.equal(await page.locator('#motionEventCount').innerText(),'1');
+  assert.equal(await page.locator('#motionLastDuration').innerText(),'4 s');
+  assert.equal(await page.evaluate(()=>window.charts.motionChart.data.datasets[0].data.at(-1).y),0);
+
   await page.locator('#temperatura_min').fill('29');
   await page.locator('#saveSettings').click();
   assert.match(await page.locator('#settingsMessage').innerText(),/mínima deve ser menor/);

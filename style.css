@@ -357,3 +357,11 @@ h1 {
 .navigation-button.secondary { background: white; color: var(--green); }
 .navigation-button:focus-visible { outline: 3px solid #4787c7; outline-offset: 3px; }
 @media (max-width: 560px) { .page-navigation { align-items: flex-start; flex-direction: column; } }
+
+.motion-panel { margin-top: 20px; }
+.motion-panel h2 { margin: 0 0 8px; font-size: 19px; }
+.motion-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 20px 0; }
+.motion-metrics div { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); padding: 14px; }
+.motion-metrics span { display: block; color: var(--muted); font-size: 12px; }
+.motion-metrics strong { display: block; margin-top: 8px; font-size: 17px; overflow-wrap: anywhere; }
+@media (max-width: 850px) { .motion-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
