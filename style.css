@@ -320,3 +320,34 @@ h1 {
 .settings-message { font-size: 13px; color: var(--green); line-height: 1.6; }
 .settings-message.error { color: var(--red); }
 @media (max-width: 560px) { .settings-grid { grid-template-columns: 1fr; } }
+
+.occurrences { margin-top: 20px; }
+.occurrences h2, #occurrenceDialog h2 { font-size: 19px; margin: 0; }
+.occurrence-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.occurrence-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) auto; gap: 12px; align-items: end; margin: 20px 0; }
+.occurrence-filters label, .observation-label { font-size: 12px; color: var(--muted); }
+.occurrence-filters input, .occurrence-filters select, #occurrenceNotes { width: 100%; min-width: 0; display: block; border: 1px solid #aabbb2; background: white; border-radius: 8px; padding: 10px; font: inherit; color: var(--ink); margin-top: 6px; }
+.occurrences button, #occurrenceDialog button { border: 1px solid var(--green); background: var(--green); color: white; border-radius: 9px; padding: 10px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.occurrences button.secondary, #occurrenceDialog button.secondary { background: white; color: var(--green); }
+.occurrences button:disabled, #occurrenceDialog fieldset:disabled { opacity: .6; cursor: wait; }
+.occurrences :focus-visible, #occurrenceDialog :focus-visible { outline: 3px solid #4787c7; outline-offset: 3px; }
+.occurrence-list { display: grid; gap: 12px; margin-bottom: 16px; }
+.occurrence-item { border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: var(--bg); }
+.occurrence-item h3 { font-size: 14px; margin: 0 0 8px; }
+.occurrence-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12px; color: var(--muted); margin: 12px 0; }
+.occurrence-item .pill { white-space: normal; }
+#occurrenceDialog { width: min(650px, calc(100% - 28px)); max-height: 90dvh; overflow-y: auto; border: 1px solid var(--line); border-radius: 17px; padding: 24px; color: var(--ink); box-shadow: var(--shadow); }
+#occurrenceDialog::backdrop { background: #10251f88; }
+.occurrence-details { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; line-height: 1.5; margin-top: 18px; }
+.occurrence-details caption { text-align: left; font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.occurrence-details th, .occurrence-details td { padding: 11px 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; white-space: pre-wrap; }
+.occurrence-details thead th { background: var(--green-soft); font-weight: 650; }
+.occurrence-details th:first-child { width: 44%; }
+.occurrence-details tbody th { color: var(--muted); font-weight: 500; }
+.occurrence-details tbody tr:nth-child(even) { background: var(--bg); }
+#occurrenceReviewFields { border: 0; border-top: 1px solid var(--line); margin: 20px 0 0; padding: 16px 0 0; min-width: 0; }
+#occurrenceReviewFields legend { font-size: 14px; font-weight: 650; }
+.observation-label { display: block; margin-top: 16px; }
+#occurrenceNotes { resize: vertical; font-size: 16px; }
+@media (max-width: 850px) { .occurrence-filters { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .occurrence-heading { flex-wrap: wrap; } .occurrence-details th, .occurrence-details td { padding: 9px 8px; } #occurrenceDialog { padding: 18px; } }

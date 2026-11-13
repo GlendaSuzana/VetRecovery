@@ -7,6 +7,10 @@ const os = require('node:os');
 const screenshots = fs.mkdtempSync(path.join(os.tmpdir(), 'vetrecovery-test-'));
 const root = path.resolve(__dirname, '..');
 const databaseMock = `
+export const query = (ref) => ref;
+export const orderByChild = () => ({});
+export const limitToLast = () => ({});
+export const update = async () => {};
 export const getDatabase = () => ({});
 export const ref = (_, path) => ({ path });
 export const push = () => ({ key: 'revision-test' });
@@ -17,6 +21,7 @@ const callbacks = {};
 window.emitConfig = value => {window.config=value;callbacks.config(value)};
 window.emitTelemetry = value => {window.telemetry=value;callbacks.telemetry(value)};
 export function onValue(ref, cb, error) {
+ if(ref.path.includes('/ocorrencias')) {queueMicrotask(()=>cb({val:()=>null}));return ()=>{}}
  const kind = ref.path.endsWith('configuracao') ? 'config' : 'telemetry';
  callbacks[kind] = value => cb({val:()=>value});
  window['fail_'+kind] = () => error(new Error('permission_denied'));
