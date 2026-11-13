@@ -299,3 +299,24 @@ h1 {
     font-size: 25px;
   }
 }
+
+.settings { margin-top: 20px; }
+.settings h2 { margin: 0 0 8px; font-size: 19px; }
+.settings-intro { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.settings fieldset { border: 0; padding: 0; margin: 18px 0 0; min-width: 0; }
+.settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.rule { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.check { display: flex; align-items: center; gap: 9px; font-size: 13px; line-height: 1.5; cursor: pointer; }
+.check input { accent-color: var(--green); width: 18px; height: 18px; flex-shrink: 0; }
+.range-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.range-fields label { font-size: 12px; color: var(--muted); }
+.range-fields input { display: block; width: 100%; margin-top: 6px; border: 1px solid #aabbb2; border-radius: 8px; padding: 10px; font: inherit; font-size: 16px; color: var(--ink); background: white; }
+.settings input:focus-visible, .settings button:focus-visible { outline: 3px solid #4787c7; outline-offset: 3px; }
+.motion-rule { margin-top: 18px; }
+.settings-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.settings button { border: 1px solid var(--green); background: var(--green); color: white; border-radius: 9px; padding: 11px 16px; font: inherit; font-size: 13px; cursor: pointer; }
+.settings button.secondary { background: white; color: var(--green); }
+.settings fieldset:disabled { opacity: .6; }
+.settings-message { font-size: 13px; color: var(--green); line-height: 1.6; }
+.settings-message.error { color: var(--red); }
+@media (max-width: 560px) { .settings-grid { grid-template-columns: 1fr; } }

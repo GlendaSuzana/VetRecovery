@@ -4,7 +4,10 @@ import { database } from "./firebase.js";
 
 import {
   ref,
-  onValue
+  onValue,
+  set,
+  push,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
 
 // Função auxiliar para localizar elementos HTML pelo ID
@@ -161,140 +164,187 @@ function showError(message) {
   $("alertMessage").textContent = message;
 }
 
-// Caminho da telemetria no Firebase
-const telemetryRef = ref(
-  database,
-  "vetrecovery/box01/telemetria"
-);
+// Configuração compartilhada entre o painel e o ESP32.
+const DEFAULT_SETTINGS = Object.freeze({
+  temperatura_min: 22, temperatura_max: 28,
+  umidade_min: 0, umidade_max: 100,
+  alerta_temperatura: true, alerta_umidade: false, alerta_movimento: false
+});
+const numberFields = ["temperatura_min", "temperatura_max", "umidade_min", "umidade_max"];
+const boolFields = ["alerta_temperatura", "alerta_umidade", "alerta_movimento"];
+const configRef = ref(database, "vetrecovery/box01/configuracao");
+let settings = { ...DEFAULT_SETTINGS };
+let settingsReady = false;
+let latestData = null;
+let telemetryError = false;
+let dirty = false;
+let saving = false;
 
-// Recebimento dos dados em tempo real
-onValue(
-  telemetryRef,
-
-  (snapshot) => {
-
-    const data = snapshot.val();
-
-    // Atualiza o status da conexão
-    connection.className = "connection online";
-
-    connectionText.textContent = "Conectado ao Firebase";
-
-    // Verifica se existem dados disponíveis
-    if (!data) {
-
-      $("alertMessage").className = "alert-box warn";
-
-      $("alertMessage").textContent =
-        "Conexão estabelecida, mas ainda não há telemetria em vetrecovery/box01/telemetria.";
-
-      return;
-    }
-
-    // Conversão dos valores recebidos
-    const temp = Number(data.temperatura);
-
-    const humidity = Number(data.umidade);
-
-    const validTemp = Number.isFinite(temp);
-
-    const validHumidity = Number.isFinite(humidity);
-
-    // Atualização da temperatura
-    $("temperature").textContent = validTemp
-      ? `${temp.toFixed(1)} °C`
-      : "-- °C";
-
-    // Atualização da umidade
-    $("humidity").textContent = validHumidity
-      ? `${humidity.toFixed(1)} %`
-      : "-- %";
-
-    // Verificação da condição do ambiente
-    const isAlert =
-      String(data.status || "").toUpperCase() === "ALERTA";
-
-    setPill(
-      "environmentStatus",
-
-      isAlert
-        ? "Atenção necessária"
-        : "Ambiente normal",
-
-      isAlert ? "bad" : "good"
-    );
-
-    // Verificação do sensor de movimento
-    const moving =
-      Number(data.movimento) === 1 ||
-      data.movimento === true;
-
-    setPill(
-      "motionStatus",
-
-      moving
-        ? "Movimento detectado"
-        : "Sem movimento",
-
-      moving ? "warn" : "good"
-    );
-
-    // Atualização dos dispositivos
-    $("ledStatus").textContent = data.led || "--";
-
-    $("buzzerStatus").textContent = data.buzzer || "--";
-
-    $("deviceId").textContent = data.dispositivo || "--";
-
-    // Horário em que o dashboard recebeu a atualização
-    $("lastUpdate").textContent =
-      new Date().toLocaleTimeString("pt-BR");
-
-    // Exibição das mensagens de alerta
-    if (isAlert) {
-
-      $("alertMessage").className = "alert-box bad";
-
-      $("alertMessage").textContent =
-        `Alerta de temperatura: ${
-          validTemp
-            ? temp.toFixed(1) + " °C"
-            : "leitura indisponível"
-        }. Verifique as condições do box.`;
-
-    } else if (moving) {
-
-      $("alertMessage").className = "alert-box warn";
-
-      $("alertMessage").textContent =
-        "Movimentação detectada no box. Acompanhe o animal pelo protocolo de monitoramento.";
-
-    } else {
-
-      $("alertMessage").className = "alert-box good";
-
-      $("alertMessage").textContent =
-        "Nenhuma condição anormal sinalizada pelo dispositivo neste momento.";
-
-    }
-
-    // Atualização do gráfico
-    if (validTemp && validHumidity) {
-
-      addChartPoint(temp, humidity);
-
-    }
-
-  },
-
-  // Tratamento de erros na leitura do Firebase
-  (error) => {
-
-    console.error("Erro ao ler o Firebase:", error);
-
-    showError(
-      "Não foi possível ler os dados. Verifique as regras de acesso do Realtime Database e a conexão com a internet."
-    );
-
+function validSettings(value) {
+  return value && numberFields.every(key => typeof value[key] === "number" && Number.isFinite(value[key]))
+    && boolFields.every(key => typeof value[key] === "boolean")
+    && value.temperatura_min >= -40 && value.temperatura_max <= 80
+    && value.temperatura_min < value.temperatura_max
+    && value.umidade_min >= 0 && value.umidade_max <= 100
+    && value.umidade_min < value.umidade_max
+    && (value.revisao === undefined || typeof value.revisao === "string");
+}
+function reading(value) {
+  if (typeof value !== "number" && typeof value !== "string") return NaN;
+  if (typeof value === "string" && !value.trim()) return NaN;
+  return Number(value);
+}
+function settingsMessage(text, error = false) {
+  $("settingsMessage").textContent = text;
+  $("settingsMessage").className = "settings-message" + (error ? " error" : "");
+}
+function fillForm(value) {
+  numberFields.forEach(key => { $(key).value = value[key]; });
+  boolFields.forEach(key => { $(key).checked = value[key]; });
+}
+function updateSummary() {
+  $("temperatureRange").textContent = settings.alerta_temperatura
+    ? `Faixa configurada: ${settings.temperatura_min} °C a ${settings.temperatura_max} °C`
+    : "Alerta de temperatura desativado";
+  $("humidityRange").textContent = settings.alerta_umidade
+    ? `Faixa configurada: ${settings.umidade_min}% a ${settings.umidade_max}%`
+    : "Alerta de umidade desativado";
+}
+function renderRules() {
+  const confirmed = settings.revisao && latestData?.configuracao_revisao === settings.revisao;
+  $("deviceConfigStatus").textContent = !settingsReady
+    ? "Configurações indisponíveis. Não foi possível confirmar as regras."
+    : !settings.revisao
+      ? "Valores padrão no painel. Salve para enviar uma configuração ao ESP32."
+      : confirmed
+        ? "ESP32 confirmou esta configuração na última telemetria recebida."
+        : "Configuração salva; aguardando confirmação do ESP32. Atualize o sketch do Wokwi se necessário.";
+  if (telemetryError) return;
+  if (!latestData) {
+    setPill("environmentStatus", "Aguardando dados", "neutral");
+    setPill("motionStatus", "Aguardando dados", "neutral");
+    $("alertMessage").className = "alert-box warn";
+    $("alertMessage").textContent = "Aguardando telemetria do ESP32.";
+    return;
   }
-);
+  const temp = reading(latestData.temperatura);
+  const humidity = reading(latestData.umidade);
+  const validTemp = Number.isFinite(temp) && temp >= -40 && temp <= 80;
+  const validHumidity = Number.isFinite(humidity) && humidity >= 0 && humidity <= 100;
+  const motionKnown = [0, 1, "0", "1", true, false].includes(latestData.movimento);
+  const moving = latestData.movimento === true || Number(latestData.movimento) === 1;
+  $("temperature").textContent = validTemp ? `${temp.toFixed(1)} °C` : "-- °C";
+  $("humidity").textContent = validHumidity ? `${humidity.toFixed(1)} %` : "-- %";
+  setPill("motionStatus", !motionKnown ? "Leitura indisponível" : moving ? "Movimento detectado" : "Sem movimento",
+    !motionKnown ? "neutral" : moving ? "warn" : "good");
+  if (!settingsReady) {
+    setPill("environmentStatus", "Regras indisponíveis", "neutral");
+    $("alertMessage").className = "alert-box warn";
+    $("alertMessage").textContent = "Não foi possível carregar as regras. A condição do ambiente não foi avaliada.";
+    return;
+  }
+  const reasons = [];
+  if (settings.alerta_temperatura && validTemp && (temp < settings.temperatura_min || temp > settings.temperatura_max)) reasons.push("Temperatura fora da faixa");
+  if (settings.alerta_umidade && validHumidity && (humidity < settings.umidade_min || humidity > settings.umidade_max)) reasons.push("Umidade fora da faixa");
+  if (settings.alerta_movimento && motionKnown && moving) reasons.push("Movimento detectado");
+  const missing = !validTemp || !validHumidity || !motionKnown;
+  const active = boolFields.some(key => settings[key]);
+  setPill("environmentStatus", reasons.length ? "Atenção necessária" : missing ? "Leitura incompleta" : active ? "Dentro das regras" : "Alertas desativados",
+    reasons.length ? "bad" : missing || !active ? "warn" : "good");
+  $("alertMessage").className = "alert-box " + (reasons.length ? "bad" : missing || !active ? "warn" : "good");
+  $("alertMessage").textContent = reasons.length
+    ? reasons.join(". ") + ". Verifique as condições do box." + (missing ? " Há também leituras indisponíveis." : "")
+    : missing ? "Há leituras indisponíveis. Não é possível confirmar todas as condições do box."
+    : !active ? "Todas as regras de alerta estão desativadas. As leituras continuam sendo exibidas."
+    : "Nenhuma das regras de alerta configuradas foi acionada.";
+}
+
+$("settingsForm").addEventListener("input", () => {
+  dirty = true;
+  settingsMessage("Alterações não salvas. Clique em Salvar configurações para aplicar.");
+});
+$("resetSettings").addEventListener("click", () => {
+  fillForm(DEFAULT_SETTINGS);
+  dirty = true;
+  settingsMessage("Valores padrão preenchidos. Clique em Salvar configurações para aplicar.");
+});
+$("settingsForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!settingsReady || saving) return;
+  const candidate = {};
+  numberFields.forEach(key => { candidate[key] = reading($(key).value); });
+  boolFields.forEach(key => { candidate[key] = $(key).checked; });
+  if (!validSettings(candidate)) {
+    settingsMessage("Verifique os limites: mínima deve ser menor que máxima. Temperatura: -40 a 80 °C; umidade: 0 a 100%.", true);
+    return;
+  }
+  candidate.revisao = push(configRef).key;
+  candidate.atualizado_em = serverTimestamp();
+  saving = true;
+  $("settingsFields").disabled = true;
+  settingsMessage("Salvando configurações no Firebase...");
+  try {
+    // Só aplica no painel após o servidor confirmar a gravação.
+    await set(configRef, candidate);
+    settings = { ...candidate };
+    dirty = false;
+    fillForm(settings);
+    updateSummary();
+    renderRules();
+    settingsMessage("Configurações salvas no Firebase. Regras aplicadas ao painel.");
+  } catch (error) {
+    settingsMessage("Não foi possível salvar. As regras anteriores foram mantidas. Verifique sua conexão e a permissão de escrita em vetrecovery/box01/configuracao.", true);
+    console.error("Erro ao salvar configurações:", error);
+  } finally {
+    saving = false;
+    $("settingsFields").disabled = !settingsReady;
+  }
+});
+
+onValue(configRef, snapshot => {
+  // O Firebase emite também a escrita local otimista; não a trate como confirmação.
+  if (saving) return;
+  const value = snapshot.val();
+  if (value !== null && !validSettings(value)) {
+    settingsReady = false;
+    $("settingsFields").disabled = true;
+    settingsMessage("Configuração inválida no Firebase. Corrija os dados antes de editar as regras.", true);
+    renderRules();
+    return;
+  }
+  settings = value === null ? { ...DEFAULT_SETTINGS } : { ...value };
+  settingsReady = true;
+  $("settingsFields").disabled = false;
+  if (!dirty) fillForm(settings);
+  updateSummary();
+  renderRules();
+  settingsMessage(dirty ? "As regras salvas foram atualizadas. Seu formulário tem alterações não salvas."
+    : value === null ? "Usando valores padrão. Salve para registrar suas regras no Firebase."
+    : "Configurações carregadas do Firebase.");
+}, error => {
+  settingsReady = false;
+  $("settingsFields").disabled = true;
+  settingsMessage("Não foi possível ler as configurações. Verifique a conexão e a permissão de leitura em vetrecovery/box01/configuracao.", true);
+  renderRules();
+  console.error("Erro ao ler configurações:", error);
+});
+
+const telemetryRef = ref(database, "vetrecovery/box01/telemetria");
+onValue(telemetryRef, snapshot => {
+  latestData = snapshot.val();
+  telemetryError = false;
+  connection.className = "connection online";
+  connectionText.textContent = "Conectado ao Firebase";
+  $("ledStatus").textContent = latestData?.led ?? "--";
+  $("buzzerStatus").textContent = latestData?.buzzer ?? "--";
+  $("deviceId").textContent = latestData?.dispositivo ?? "--";
+  $("lastUpdate").textContent = latestData ? new Date().toLocaleTimeString("pt-BR") : "--";
+  renderRules();
+  const temp = reading(latestData?.temperatura);
+  const humidity = reading(latestData?.umidade);
+  if (Number.isFinite(temp) && Number.isFinite(humidity) && temp >= -40 && temp <= 80 && humidity >= 0 && humidity <= 100) addChartPoint(temp, humidity);
+}, error => {
+  telemetryError = true;
+  showError("Não foi possível ler a telemetria. Verifique a conexão e as regras de acesso do Firebase.");
+  console.error("Erro ao ler Firebase:", error);
+});

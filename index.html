@@ -45,14 +45,14 @@
         <span class="metric-icon">🌡️</span>
         <div class="metric-label">Temperatura</div>
         <div class="metric-value" id="temperature">-- °C</div>
-        <div class="metric-note">Faixa configurada: 22 °C a 28 °C</div>
+        <div class="metric-note" id="temperatureRange">Faixa padrão: 22 °C a 28 °C</div>
       </article>
 
       <article class="card">
         <span class="metric-icon">💧</span>
         <div class="metric-label">Umidade</div>
         <div class="metric-value" id="humidity">-- %</div>
-        <div class="metric-note">Umidade relativa do ambiente</div>
+        <div class="metric-note" id="humidityRange">Umidade relativa do ambiente</div>
       </article>
 
       <article class="card status-card">
@@ -126,6 +126,39 @@
         </div>
       </article>
 
+    </section>
+
+    <section class="card settings" aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle">Limites e condições de alerta</h2>
+      <p class="settings-intro">Defina as regras do Box 01. Um valor igual ao limite permanece dentro da faixa. Qualquer regra ativa atendida gera alerta.</p>
+      <form id="settingsForm">
+        <fieldset id="settingsFields" disabled>
+          <div class="settings-grid">
+            <div class="rule">
+              <label class="check"><input id="alerta_temperatura" type="checkbox" checked> Alertar por temperatura fora da faixa</label>
+              <div class="range-fields">
+                <label>Mínima (°C)<input id="temperatura_min" type="number" min="-40" max="80" step="0.1" required value="22"></label>
+                <label>Máxima (°C)<input id="temperatura_max" type="number" min="-40" max="80" step="0.1" required value="28"></label>
+              </div>
+            </div>
+            <div class="rule">
+              <label class="check"><input id="alerta_umidade" type="checkbox"> Alertar por umidade fora da faixa</label>
+              <div class="range-fields">
+                <label>Mínima (%)<input id="umidade_min" type="number" min="0" max="100" step="0.1" required value="0"></label>
+                <label>Máxima (%)<input id="umidade_max" type="number" min="0" max="100" step="0.1" required value="100"></label>
+              </div>
+            </div>
+          </div>
+          <label class="check motion-rule"><input id="alerta_movimento" type="checkbox"> Gerar alerta sempre que houver movimento</label>
+          <p class="metric-note">Sem essa opção, o movimento continua visível, mas não gera alerta. Ajuste os limites conforme o protocolo da equipe responsável.</p>
+          <div class="settings-actions">
+            <button id="saveSettings" type="submit">Salvar configurações</button>
+            <button id="resetSettings" type="button" class="secondary">Preencher valores padrão</button>
+          </div>
+        </fieldset>
+      </form>
+      <p id="settingsMessage" class="settings-message" role="status" aria-live="polite">Carregando configurações...</p>
+      <p id="deviceConfigStatus" class="metric-note" aria-live="polite">Aguardando confirmação do ESP32.</p>
     </section>
 
     <p class="footer">
