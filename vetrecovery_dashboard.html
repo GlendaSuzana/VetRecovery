@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10251f">
+
+  <title>VetRecovery | Monitoramento do Box</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <main class="shell">
+
+    <header>
+      <a class="brand" href="index.html">
+          <img src="img/logo_2.png" alt="logo VetRecovery" style="height: 5rem; width: 15rem;">
+        </a>
+      </div>
+
+      <div id="connection" class="connection">
+        <span class="dot"></span>
+        <span id="connectionText">Conectando ao Firebase...</span>
+      </div>
+    </header>
+
+    <section class="intro page-navigation">
+      <div>
+        <h2>Painel de monitoramento</h2>
+        <p>Box 01 · Dados recebidos diretamente do dispositivo ESP32</p>
+      </div>
+      <a class="navigation-button" href="ocorrencias.html">Ver ocorrências</a>
+    </section>
+
+    <section class="grid">
+
+      <article class="card">
+        <span class="metric-icon">🌡️</span>
+        <div class="metric-label">Temperatura</div>
+        <div class="metric-value" id="temperature">-- °C</div>
+        <div class="metric-note" id="temperatureRange">Faixa padrão: 22 °C a 28 °C</div>
+      </article>
+
+      <article class="card">
+        <span class="metric-icon">💧</span>
+        <div class="metric-label">Umidade</div>
+        <div class="metric-value" id="humidity">-- %</div>
+        <div class="metric-note" id="humidityRange">Umidade relativa do ambiente</div>
+      </article>
+
+      <article class="card status-card">
+        <div>
+          <span class="metric-icon">🩺</span>
+          <div class="metric-label">Condição do ambiente</div>
+        </div>
+
+        <div>
+          <span id="environmentStatus" class="pill neutral">
+            Aguardando dados
+          </span>
+        </div>
+      </article>
+
+      <article class="card status-card">
+        <div>
+          <span class="metric-icon">🐾</span>
+          <div class="metric-label">Movimentação</div>
+        </div>
+
+        <div>
+          <span id="motionStatus" class="pill neutral">
+            Aguardando dados
+          </span>
+        </div>
+      </article>
+
+      <article class="card wide">
+        <h3 class="section-title">
+          Variação das leituras nesta sessão
+        </h3>
+
+        <div class="chart-wrap">
+          <canvas id="readingsChart"></canvas>
+        </div>
+
+        <p class="metric-note">
+          O gráfico começa a ser preenchido quando esta página recebe
+          novas leituras. Ele não representa um histórico salvo no Firebase.
+        </p>
+      </article>
+
+      <article class="card wide">
+        <h3 class="section-title">Estado dos dispositivos</h3>
+
+        <div class="details">
+          <div class="detail">
+            <span>LED de alerta</span>
+            <strong id="ledStatus">--</strong>
+          </div>
+
+          <div class="detail">
+            <span>Buzzer</span>
+            <strong id="buzzerStatus">--</strong>
+          </div>
+
+          <div class="detail">
+            <span>Identificação</span>
+            <strong id="deviceId">--</strong>
+          </div>
+
+          <div class="detail">
+            <span>Última atualização</span>
+            <strong id="lastUpdate">--</strong>
+          </div>
+        </div>
+
+        <div id="alertMessage" class="alert-box warn">
+          Aguardando a primeira leitura do ESP32...
+        </div>
+      </article>
+
+    </section>
+
+    <section class="card motion-panel" aria-labelledby="motionChartTitle">
+      <h2 id="motionChartTitle">Atividade do sensor de movimento</h2>
+      <p class="settings-intro">0 = sem movimento · 1 = movimento detectado. Leituras recebidas nesta sessão.</p>
+      <div class="chart-wrap"><canvas id="motionChart" role="img" aria-label="Gráfico de movimento: zero sem movimento e um com movimento"></canvas></div>
+      <p id="motionChartMessage" class="metric-note" role="status">Aguardando leituras do sensor PIR...</p>
+      <div class="motion-metrics">
+        <div><span>Inícios observados</span><strong id="motionEventCount">0</strong></div>
+        <div><span>Frequência média observada</span><strong id="motionFrequency">--</strong></div>
+        <div><span>Duração observada atual</span><strong id="motionCurrentDuration">--</strong></div>
+        <div><span>Último evento observado</span><strong id="motionLastDuration">--</strong></div>
+      </div>
+      <p class="metric-note">Gráfico: últimas 60 amostras. Contagem e durações estimadas desde a abertura da página, conforme o intervalo entre leituras; reiniciam ao recarregar ou voltar ao painel. Lacunas não são consideradas repouso. Um movimento já ativo ao abrir a página tem início desconhecido e não aumenta a contagem de inícios observados.</p>
+      <h3 class="section-title">Histórico de movimento</h3>
+      <p id="activitySummary" role="status">Aguardando o serviço de monitoramento.</p>
+      <ol id="motionHistory"></ol>
+      <p id="motionHistoryStatus" class="metric-note" role="status"></p>
+    </section>
+
+    <section class="card settings" aria-labelledby="settingsTitle">
+      <h2 id="settingsTitle">Limites e condições de alerta</h2>
+      <p class="settings-intro">Defina as regras do Box 01. Um valor igual ao limite permanece dentro da faixa. Qualquer regra ativa atendida gera alerta.</p>
+      <p class="metric-note">As regras de temperatura, umidade e movimento imediato também controlam o LED e o buzzer após a confirmação do ESP32.</p>
+      <form id="settingsForm">
+        <fieldset id="settingsFields" disabled>
+          <div class="rule">
+            <label for="observationMode">Modo de observação</label>
+            <select id="observationMode">
+              <option value="rotina">Rotina</option>
+              <option value="intensiva">Intensiva</option>
+              <option value="personalizada">Personalizada</option>
+            </select>
+            <div class="range-fields">
+              <label>Janela (min)<input id="janela_min" type="number" min="1" max="60" required value="5"></label>
+              <label>Movimentos na janela<input id="repeticoes" type="number" min="2" max="100" required value="4"></label>
+              <label>Movimento prolongado (s)<input id="duracao_s" type="number" min="2" max="3600" required value="30"></label>
+            </div>
+          </div>
+          <div class="settings-grid">
+            <div class="rule">
+              <label class="check"><input id="alerta_temperatura" type="checkbox" checked> Alertar por temperatura fora da faixa</label>
+              <div class="range-fields">
+                <label>Mínima (°C)<input id="temperatura_min" type="number" min="-40" max="80" step="0.1" required value="22"></label>
+                <label>Máxima (°C)<input id="temperatura_max" type="number" min="-40" max="80" step="0.1" required value="28"></label>
+              </div>
+            </div>
+            <div class="rule">
+              <label class="check"><input id="alerta_umidade" type="checkbox"> Alertar por umidade fora da faixa</label>
+              <div class="range-fields">
+                <label>Mínima (%)<input id="umidade_min" type="number" min="0" max="100" step="0.1" required value="0"></label>
+                <label>Máxima (%)<input id="umidade_max" type="number" min="0" max="100" step="0.1" required value="100"></label>
+              </div>
+            </div>
+          </div>
+          <label class="check motion-rule"><input id="alerta_movimento" type="checkbox"> Gerar alerta sempre que houver movimento</label>
+          <p class="metric-note">Sem essa opção, o movimento continua visível, mas não gera alerta. Ajuste os limites conforme o protocolo da equipe responsável.</p>
+          <div class="settings-actions">
+            <button id="saveSettings" type="submit">Salvar configurações</button>
+            <button id="resetSettings" type="button" class="secondary">Preencher valores padrão</button>
+          </div>
+        </fieldset>
+      </form>
+      <p id="settingsMessage" class="settings-message" role="status" aria-live="polite">Carregando configurações...</p>
+      <p id="deviceConfigStatus" class="metric-note" aria-live="polite">Aguardando confirmação do ESP32.</p>
+    </section>
+
+    <p class="footer">
+      VetRecovery · Monitoramento IoT em tempo real
+    </p>
+
+  </main>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>
