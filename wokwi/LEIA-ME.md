@@ -4,7 +4,7 @@
 
 1. Substitua o conteúdo de `sketch.ino` pelo arquivo `sketch.ino` desta pasta.
 2. No Wokwi, crie uma nova aba/arquivo chamado **ocorrencias.h** e copie o conteúdo do arquivo de mesmo nome desta pasta. O nome deve ser exatamente esse, pois o sketch usa `#include "ocorrencias.h"`.
-3. Substitua `libraries.txt` pelo desta pasta. As bibliotecas DHT sensor library e PubSubClient foram preservadas; foi acrescentada ArduinoJson 7.4.2 para interpretar e montar os registros JSON.
+3. Use o `libraries.txt` do projeto no Wokwi, com DHT sensor library, PubSubClient e ArduinoJson 7.4.2.
 4. Não altere `diagram.json`, os pinos nem as ligações.
 5. Inicie a simulação e abra o dashboard pelo servidor local.
 
@@ -14,13 +14,13 @@ O sketch usado como base é o enviado na conversa em 13/11. Todas as instruçõe
 
 - DHT.h, DHT22 no GPIO 4, PIR no 12, LED no 5 e buzzer no 2;
 - leitura a cada intervalo mínimo de 2 segundos, validação e mensagens existentes;
-- faixa fixa de 22–28 °C para LED/buzzer e comportamento das saídas;
+- faixa padrão de temperatura de 22–28 °C até a consulta de uma configuração válida;
 - Wi-Fi, endereço do banco, HTTPS e HTTP PUT da telemetria original;
 - formato dos dados já enviados ao painel.
 
-Foram acrescentados somente a inicialização da rotina, o recebimento das leituras e a sincronização das ocorrências em caminho separado.
+As regras do Firebase também controlam a sinalização local. Qualquer regra imediata ativa pode ligar o LED e o buzzer.
 
-**Escopo importante:** o sketch enviado não consultava as configurações do site para controlar as saídas. Nesta alteração, as regras do site são consultadas pela rotina de ocorrências; LED, buzzer e o campo `status` original continuam usando 22–28 °C. Essa diferença foi preservada para não alterar o comportamento existente. A confirmação geral de configuração do circuito, já existente no site, continua pendente porque o sketch original não a emitia. O evento registra sua própria `configuracao_revisao`.
+A telemetria inclui a revisão aplicada para confirmação pelo painel. Se a consulta falhar, o ESP32 mantém a última configuração válida em memória.
 
 ## Como observar a nova funcionalidade
 
@@ -64,8 +64,8 @@ A nova rotina lê `vetrecovery/box01/configuracao` e lê/grava `vetrecovery/box0
 
 No nó de ocorrências, o administrador deve preservar as permissões existentes e acrescentar o índice `inicio_em` se necessário para a lista ordenada. Observações continuam sendo gravadas somente pelo dashboard em `{id}/acompanhamento`.
 
-## Validação concluída
+## Validação no Wokwi
 
-Compilação local concluída com Arduino ESP32 2.0.17, placa genérica ESP32, DHT sensor library 1.4.7 e ArduinoJson 7.4.2. Uso de programa: 936.425 bytes (71%); variáveis globais: 49.064 bytes (14%). Os arquivos desta pasta foram comparados com os compilados. A comparação com o sketch enviado confirmou que, descontadas as chamadas adicionais de ocorrências, o conteúdo original foi preservado.
+A versão anterior foi compilada localmente. Esta revisão precisa ser compilada e executada no Wokwi.
 
-Os testes do dashboard com Firebase simulado passaram. A compilação não substitui o teste da simulação: ainda é necessário copiar os arquivos para o Wokwi, iniciar e confirmar o envio com as permissões reais do banco. Nenhum registro de teste foi gravado no Firebase real.
+Compile o projeto e confira a confirmação da configuração, as saídas e o envio ao Firebase na simulação.

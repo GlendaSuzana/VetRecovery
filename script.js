@@ -2,12 +2,16 @@
 // Importação da conexão com o Firebase
 import { database } from "./firebase.js";
 import { MotionSession } from "./movimento.js";
+import { activityDefaults, activityRules } from "./observacao.js";
 
 import {
   ref,
   onValue,
   set,
   push,
+  query,
+  orderByChild,
+  limitToLast,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-database.js";
 
@@ -237,6 +241,8 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 const numberFields = ["temperatura_min", "temperatura_max", "umidade_min", "umidade_max"];
 const boolFields = ["alerta_temperatura", "alerta_umidade", "alerta_movimento"];
+const activityFields = Object.keys(activityDefaults);
+const modes = { rotina: activityDefaults, intensiva: { janela_min: 5, repeticoes: 3, duracao_s: 15 } };
 const configRef = ref(database, "vetrecovery/box01/configuracao");
 let settings = { ...DEFAULT_SETTINGS };
 let settingsReady = false;
@@ -266,6 +272,9 @@ function settingsMessage(text, error = false) {
 function fillForm(value) {
   numberFields.forEach(key => { $(key).value = value[key]; });
   boolFields.forEach(key => { $(key).checked = value[key]; });
+  $("observationMode").value = ["rotina", "intensiva", "personalizada"].includes(value.modo) ? value.modo : "rotina";
+  const rules = activityRules(value);
+  activityFields.forEach(key => { $(key).value = rules[key]; });
 }
 function updateSummary() {
   $("temperatureRange").textContent = settings.alerta_temperatura
@@ -283,7 +292,7 @@ function renderRules() {
       ? "Valores padrão no painel. Salve para enviar uma configuração ao ESP32."
       : confirmed
         ? "ESP32 confirmou esta configuração na última telemetria recebida."
-        : "Configuração salva; aguardando confirmação do ESP32. Atualize o sketch do Wokwi se necessário.";
+        : "Configuração salva; aguardando confirmação do ESP32 pela telemetria.";
   if (telemetryError) return;
   if (!latestData) {
     setPill("environmentStatus", "Aguardando dados", "neutral");
@@ -324,7 +333,13 @@ function renderRules() {
     : "Nenhuma das regras de alerta configuradas foi acionada.";
 }
 
-$("settingsForm").addEventListener("input", () => {
+$("settingsForm").addEventListener("input", event => {
+  if (event.target.id === "observationMode") {
+    const preset = modes[event.target.value];
+    if (preset) activityFields.forEach(key => { $(key).value = preset[key]; });
+  } else if (activityFields.includes(event.target.id)) {
+    $("observationMode").value = "personalizada";
+  }
   dirty = true;
   settingsMessage("Alterações não salvas. Clique em Salvar configurações para aplicar.");
 });
@@ -339,6 +354,8 @@ $("settingsForm").addEventListener("submit", async event => {
   const candidate = {};
   numberFields.forEach(key => { candidate[key] = reading($(key).value); });
   boolFields.forEach(key => { candidate[key] = $(key).checked; });
+  candidate.modo = $("observationMode").value;
+  candidate.atividade = Object.fromEntries(activityFields.map(key => [key, $(key).valueAsNumber]));
   if (!validSettings(candidate)) {
     settingsMessage("Verifique os limites: mínima deve ser menor que máxima. Temperatura: -40 a 80 °C; umidade: 0 a 100%.", true);
     return;
@@ -414,4 +431,43 @@ onValue(telemetryRef, snapshot => {
   addMotionPoint(null);
   showError("Não foi possível ler a telemetria. Verifique a conexão e as regras de acesso do Firebase.");
   console.error("Erro ao ler Firebase:", error);
+});
+
+const activityPath = "vetrecovery/box01/atividade";
+let activitySummary;
+function renderActivitySummary() {
+  const summary = activitySummary;
+  if (!summary?.disponivel || Date.now() - summary.atualizado_em > 30000) {
+    $("activitySummary").textContent = "Sem amostras recentes do serviço de monitoramento.";
+    return;
+  }
+  const patterns = [];
+  if (summary.movimento_recorrente) patterns.push("Movimento recorrente");
+  if (summary.movimento_prolongado) patterns.push("Movimento prolongado");
+  const frequency = (summary.count / summary.janela_min).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+  const metrics = `${summary.count} início(s) nos últimos ${summary.janela_min} min · ${frequency} por min na janela.`;
+  $("activitySummary").textContent = [metrics, ...patterns].join(" ");
+}
+onValue(ref(database, `${activityPath}/resumo`), snapshot => {
+  activitySummary = snapshot.val();
+  renderActivitySummary();
+}, () => {
+  activitySummary = null;
+  renderActivitySummary();
+});
+setInterval(renderActivitySummary, 5000);
+const motionHistoryQuery = query(ref(database, `${activityPath}/movimentos`), orderByChild("inicio_em"), limitToLast(20));
+onValue(motionHistoryQuery, snapshot => {
+  const events = Object.values(snapshot.val() ?? {}).sort((a, b) => b.inicio_em - a.inicio_em);
+  const status = { em_andamento: "Em andamento", encerrada: "Encerrado", interrompida: "Interrompido" };
+  const rows = events.map(event => {
+    const row = document.createElement("li");
+    row.textContent = `${new Date(event.inicio_em).toLocaleString("pt-BR")} · ${motionDuration(event.duracao_ms)} · ${status[event.estado]}${event.parcial ? " · início desconhecido" : ""}`;
+    return row;
+  });
+  $("motionHistory").replaceChildren(...rows);
+  $("motionHistoryStatus").textContent = rows.length ? "Até 20 movimentos mais recentes." : "Nenhum movimento registrado pelo serviço.";
+}, () => {
+  $("motionHistory").replaceChildren();
+  $("motionHistoryStatus").textContent = "Histórico indisponível. Verifique o acesso ao Firebase.";
 });

@@ -143,14 +143,31 @@
         <div><span>Último evento observado</span><strong id="motionLastDuration">--</strong></div>
       </div>
       <p class="metric-note">Gráfico: últimas 60 amostras. Contagem e durações estimadas desde a abertura da página, conforme o intervalo entre leituras; reiniciam ao recarregar ou voltar ao painel. Lacunas não são consideradas repouso. Um movimento já ativo ao abrir a página tem início desconhecido e não aumenta a contagem de inícios observados.</p>
-      <p class="metric-note">O registro persistente permanece em <a href="ocorrencias.html">Ocorrências</a>. No firmware atual, episódios de movimento são registrados quando a regra de alerta por movimento está ativada; este gráfico funciona independentemente dessa regra.</p>
+      <h3 class="section-title">Histórico de movimento</h3>
+      <p id="activitySummary" role="status">Aguardando o serviço de monitoramento.</p>
+      <ol id="motionHistory"></ol>
+      <p id="motionHistoryStatus" class="metric-note" role="status"></p>
     </section>
 
     <section class="card settings" aria-labelledby="settingsTitle">
       <h2 id="settingsTitle">Limites e condições de alerta</h2>
       <p class="settings-intro">Defina as regras do Box 01. Um valor igual ao limite permanece dentro da faixa. Qualquer regra ativa atendida gera alerta.</p>
+      <p class="metric-note">As regras de temperatura, umidade e movimento imediato também controlam o LED e o buzzer após a confirmação do ESP32.</p>
       <form id="settingsForm">
         <fieldset id="settingsFields" disabled>
+          <div class="rule">
+            <label for="observationMode">Modo de observação</label>
+            <select id="observationMode">
+              <option value="rotina">Rotina</option>
+              <option value="intensiva">Intensiva</option>
+              <option value="personalizada">Personalizada</option>
+            </select>
+            <div class="range-fields">
+              <label>Janela (min)<input id="janela_min" type="number" min="1" max="60" required value="5"></label>
+              <label>Movimentos na janela<input id="repeticoes" type="number" min="2" max="100" required value="4"></label>
+              <label>Movimento prolongado (s)<input id="duracao_s" type="number" min="2" max="3600" required value="30"></label>
+            </div>
+          </div>
           <div class="settings-grid">
             <div class="rule">
               <label class="check"><input id="alerta_temperatura" type="checkbox" checked> Alertar por temperatura fora da faixa</label>

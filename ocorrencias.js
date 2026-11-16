@@ -5,14 +5,16 @@ import {
 
 const $ = (id) => document.getElementById(id);
 
-// Ocorrências: os episódios são produzidos pelo ESP32, nunca pelas abas do dashboard.
+// O ESP32 registra alertas de sensores e o monitor registra padrões de atividade.
 const OCCURRENCES_PATH = "vetrecovery/box01/ocorrencias";
 const occurrenceTypes = {
   temperatura_alta: "Temperatura acima do limite",
   temperatura_baixa: "Temperatura abaixo do limite",
   umidade_alta: "Umidade acima do limite",
   umidade_baixa: "Umidade abaixo do limite",
-  movimento: "Movimento detectado"
+  movimento: "Movimento detectado",
+  movimento_recorrente: "Movimento recorrente",
+  movimento_prolongado: "Movimento prolongado"
 };
 const occurrenceStates = { em_andamento: "Em andamento", encerrada: "Encerrada", interrompida: "Interrompida" };
 let occurrenceRecords = [];
@@ -92,7 +94,7 @@ function renderOccurrences() {
       && (!from || (day && day >= from)) && (!to || (day && day <= to));
   });
   occurrenceMessage(!occurrenceRecords.length
-    ? "Nenhuma ocorrência registrada. Os episódios aparecerão aqui quando o ESP32 começar a enviá-los ao Firebase."
+    ? "Nenhuma ocorrência registrada."
     : !filtered.length ? "Nenhuma ocorrência corresponde aos filtros nos registros carregados."
     : `${filtered.length} ocorrência(s) exibida(s). Atualização automática ativada.`);
   filtered.forEach(item => {
@@ -115,6 +117,8 @@ function describeRule(item) {
   const rule = item.regra;
   if (!rule || typeof rule !== "object") return "Não informada";
   if (item.tipo === "movimento") return rule.ativa === true ? "Alerta por movimento ativado" : "Regra de movimento não informada";
+  if (item.tipo === "movimento_recorrente") return `${rule.repeticoes} inícios em ${rule.janela_min} min`;
+  if (item.tipo === "movimento_prolongado") return `Duração de pelo menos ${rule.duracao_s} s`;
   const unit = typeof item.tipo === "string" && item.tipo.startsWith("umidade") ? "%" : "°C";
   return typeof rule.min === "number" && Number.isFinite(rule.min) && typeof rule.max === "number" && Number.isFinite(rule.max)
     ? `Faixa de ${rule.min} a ${rule.max} ${unit}` : "Limites não informados";

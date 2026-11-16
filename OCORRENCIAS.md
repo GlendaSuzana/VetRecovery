@@ -84,7 +84,7 @@ Solicitar ao administrador:
 
 1. Abra `index.html` pelo Live Server e clique em **Ver ocorrências**. A página também pode ser aberta diretamente em `ocorrencias.html`. Use **Voltar ao painel** para retornar.
 2. Sem registros no Firebase, verá a mensagem de lista vazia; com permissão negada, verá a mensagem correspondente.
-3. Após copiar os arquivos preparados para o Wokwi, cada episódio enviado com sucesso aparecerá automaticamente. O registro usa as regras do site; a sinalização local original continua usando os limites fixos do sketch enviado, conforme a preservação de escopo solicitada.
+3. Após copiar os arquivos para o Wokwi, cada episódio enviado com sucesso aparece automaticamente. As saídas locais também usam os limites e alertas imediatos salvos no painel.
 4. Clique em **Ver detalhes**, registre uma observação, marque revisão e salve. O sucesso é mostrado somente quando o Firebase confirmar. Falhas mantêm o rascunho no formulário.
 5. Feche e abra os detalhes para consultar o acompanhamento salvo. Os limites continuam sendo alterados na seção de configuração existente.
 

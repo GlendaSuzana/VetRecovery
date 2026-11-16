@@ -21,7 +21,7 @@ const callbacks = {};
 window.emitConfig = value => {window.config=value;callbacks.config(value)};
 window.emitTelemetry = value => {window.telemetry=value;callbacks.telemetry(value)};
 export function onValue(ref, cb, error) {
- if(ref.path.includes('/ocorrencias')) {queueMicrotask(()=>cb({val:()=>null}));return ()=>{}}
+ if(ref.path.includes('/ocorrencias') || ref.path.includes('/atividade/')) {queueMicrotask(()=>cb({val:()=>null}));return ()=>{}}
  const kind = ref.path.endsWith('configuracao') ? 'config' : 'telemetry';
  callbacks[kind] = value => cb({val:()=>value});
  window['fail_'+kind] = () => error(new Error('permission_denied'));
