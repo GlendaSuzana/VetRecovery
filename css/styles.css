@@ -523,3 +523,68 @@ footer {
       .back-link:hover {
         color: var(--green);
       }
+
+/* ===== Planos ===== */
+.plans {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.plan {
+  padding: 26px 23px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--panel);
+  box-shadow: 0 8px 25px #172a2409;
+}
+
+.plan-tag {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.plan-price {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.plan-price strong {
+  color: var(--ink);
+  font-size: 30px;
+  letter-spacing: -1px;
+}
+
+.plan p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.plan-recurring {
+  border-color: #bfe0cf;
+}
+
+.plan-recurring .plan-tag,
+.plan-recurring .plan-price strong {
+  color: var(--green);
+}
+
+.plan-hospital .plan-tag,
+.plan-hospital .plan-price strong {
+  color: #c2631a;
+}
+
+@media (max-width: 760px) {
+  .plans {
+    grid-template-columns: 1fr;
+  }
+}
